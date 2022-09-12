@@ -1,3 +1,5 @@
+// Adapted from https://github.com/Rust-SDL2/rust-sdl2/blob/master/examples/ttf-demo.rs
+
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::ttf::Sdl2TtfContext;
