@@ -320,15 +320,10 @@ fn main() -> Result<(), String> {
     canvas.clear();
     canvas.present();
 
-    const SNAP_TOLERANCE: f64 = 15.0f64;
-
     let mut events = sdl_context.event_pump()?;
-    let mut seg_ctr: usize = 0;
     let mut container = GeometryContainer::new(15f64);
-    let mut active: Option<usize> = None;
     let mut fx = 0f64;
     let mut fy = 0f64;
-    let mut snap: Option<Snap<f64>> = None;
 
     'main: loop {
         for event in events.poll_iter() {
