@@ -209,8 +209,21 @@ impl<S: Scalar> GeometryContainer<S> {
 
 }
 
+struct Way<S> {
+    pub segment: QuadraticBezierSegment<S>
+}
+
+impl<S: Scalar> Way<S> {
+
+    pub fn new(segment: QuadraticBezierSegment<S>) -> Self {
+        return Self {
+            segment: segment
+        }
+    }
+}
+
 struct Geometry<S> {
-    segment: QuadraticBezierSegment<S>,
+    way: Way<S>,
     construction_point: usize
 }
 
@@ -225,23 +238,24 @@ impl<S: Scalar> Geometry<S> {
             to: point.clone(),
             ctrl: point.clone()
         };
+        let way = Way::new(segment);
         return Self {
-            segment: segment,
+            way: way,
             construction_point: 1
         }
     }
 
     fn new_split_segment(split_segment: QuadraticBezierSegment<S>) -> Self {
-        return Geometry { segment: split_segment, construction_point: Self::CONSTRUCTION_POINTS };
+        return Self { way: Way::new(split_segment), construction_point: Self::CONSTRUCTION_POINTS };
     }
 
     pub fn split(&self, t: S) -> [Self; 2] {
-        let splits = self.segment.split(t);
+        let splits = self.way.segment.split(t);
         return [Self::new_split_segment(splits.0), Self::new_split_segment(splits.1)];
     }
 
     fn update_at(&mut self, at: usize, x: S, y: S) {
-        let mut segment = &mut self.segment;
+        let mut segment = &mut self.way.segment;
         let mut point = match at {
             0 => &mut segment.from,
             1 => &mut segment.to,
@@ -252,8 +266,8 @@ impl<S: Scalar> Geometry<S> {
     }
 
     pub fn snap_t(&self, p: Point<S>, tolerance: S) -> Option<S>{
-        if self.segment.distance_to_point(p) <= tolerance {
-            let closest_point = self.segment.closest_point(p);
+        if self.way.segment.distance_to_point(p) <= tolerance {
+            let closest_point = self.way.segment.closest_point(p);
             return Some(closest_point);
         }
         return None;
@@ -281,7 +295,7 @@ impl<S: Scalar> Geometry<S> {
     }
 
     fn sample(&self, t: S) -> Point<S> {
-        return self.segment.sample(t);
+        return self.way.segment.sample(t);
     }
 }
 
@@ -355,7 +369,7 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
         container.foreach(|g| { 
-            draw_segment(&mut canvas, &g.segment) 
+            draw_segment(&mut canvas, &g.way.segment) 
         });
         match container.snap(fx, fy) {
             Some(snap) => { 
