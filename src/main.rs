@@ -2,6 +2,8 @@ extern crate sdl2;
 extern crate num;
 extern crate lyon_geom;
 
+pub mod text;
+
 use std::collections::HashMap;
 
 use lyon_geom::Scalar;
@@ -366,6 +368,7 @@ fn main() -> Result<(), String> {
         container.foreach(|g| { 
             draw_segment(&mut canvas, &g.way.segment) 
         });
+        text::write_multiline_text(&mut canvas, &ttf_context, "Example text\nLine 2", 0, 0, 16);
         match container.snap(fx, fy) {
             Some(snap) => { 
             draw_snap(&mut canvas, snap, container.snap_tolerance as i32);

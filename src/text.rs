@@ -1,7 +1,9 @@
-// Adapted from https://github.com/Rust-SDL2/rust-sdl2/blob/master/examples/ttf-demo.rs
+// Adapted from https://github.com/Rust-SDL2/rust-sdl2/blob/master/examples/ttf-demo.rs&
 
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
+use sdl2::surface::Surface;
+use sdl2::ttf::FontError;
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::Window;
 use sdl2::pixels::Color;
@@ -14,53 +16,30 @@ macro_rules! rect(
     )
 );
 
-fn get_centered_rect(screen_width: u32, screen_height: u32, rect_width: u32, rect_height: u32, cons_width: u32, cons_height: u32) -> Rect {
-    let wr = rect_width as f32 / cons_width as f32;
-    let hr = rect_height as f32 / cons_height as f32;
-
-    let (w, h) = if wr > 1f32 || hr > 1f32 {
-        if wr > hr {
-            println!("Scaling down! The text will look worse!");
-            let h = (rect_height as f32 / wr) as i32;
-            (cons_width as i32, h)
-        } else {
-            println!("Scaling down! The text will look worse!");
-            let w = (rect_width as f32 / hr) as i32;
-            (w, cons_height as i32)
-        }
-    } else {
-        (rect_width as i32, rect_height as i32)
-    };
-
-    let cx = (screen_width as i32 - w) / 2;
-    let cy = (screen_height as i32 - h) / 2;
-    rect!(cx, cy, w, h)
+pub fn create_text_surface<'a>(ttf_context: &'a Sdl2TtfContext, text: &str, point_size: u16) -> Result<Surface<'a>, FontError> {
+    let mut font = ttf_context.load_font(FONT_PATH, point_size).expect(&format!("Not found: {}", FONT_PATH));
+    font.set_style(sdl2::ttf::FontStyle::NORMAL);
+    return font
+        .render(text)
+        .blended(Color::RGBA(255, 0, 0, 255));
 }
 
-fn get_text_surface(canvas: &mut Canvas<Window>, ttf_context: &mut Sdl2TtfContext, screen_width: u32, screen_height: u32) -> Option<Rect> {
-    let mut font = ttf_context.load_font(FONT_PATH, 128).ok()?;
-    font.set_style(sdl2::ttf::FontStyle::NORMAL);
-    
-    let surface = font
-        .render("Hello Rust!")
-        .blended(Color::RGBA(255, 0, 0, 255))
-        .map_err(|e| e.to_string()).ok()?;
+pub fn write_text(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, text: &str, x: u32, y: u32, point_size: u16) -> Result<(), String> {
+    let text_surface = create_text_surface(ttf_context, text, point_size).unwrap();
     let texture_creator = canvas.texture_creator();
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string()).ok()?;
-
+    let texture = texture_creator.create_texture_from_surface(&text_surface).unwrap();
     let sdl2::render::TextureQuery { width, height, .. } = texture.query();
+    let position = rect!(x, y, width, height);
+    return canvas.copy(&texture, None, Some(position));
+}
 
-    let padding = 64;
-    let target = get_centered_rect(
-        screen_width,
-        screen_height,
-        width,
-        height,
-        screen_width - padding,
-        screen_height - padding,
-    );
-
-    return Some(target);
+pub fn write_multiline_text(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, text: &str, x: u32, y: u32, point_size: u16) -> Result<(), String> {
+    let splits = text.split("\n").collect::<Vec<&str>>();
+    for i in 0..splits.len() {
+        let line_result = write_text(canvas, ttf_context, &splits[i], 0, i as u32 * point_size as u32, point_size);
+        if line_result.is_err() {
+            return line_result;
+        }
+    }
+    Ok(())
 }
