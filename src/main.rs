@@ -209,6 +209,26 @@ impl<S: Scalar> GeometryContainer<S> {
         }
     }
 
+    pub fn debug_stats(&self) -> Vec<String> {
+        let mut stats = vec!(
+            format!("geometry_count: {}", self.geometries.len()),
+            format!("index: {}", self.index)
+        );
+        match self.active {
+            Some(active_idx) => {
+                stats.push(format!("active: {}", active_idx));
+                match self.geometries.get(&active_idx) {
+                    Some(geometry) => stats.append(&mut geometry.debug_stats()),
+                    None => ()
+                }
+            }
+            None => {
+                stats.push(String::from("active: none"));
+            }
+        }
+        return stats;
+    }
+
 }
 
 struct Way<S> {
@@ -299,6 +319,12 @@ impl<S: Scalar> Geometry<S> {
     fn sample(&self, t: S) -> Point<S> {
         return self.way.segment.sample(t);
     }
+
+    pub fn debug_stats(&self) -> Vec<String> {
+        return vec!(
+            format!("construction_point: {}", self.construction_point)
+        );
+    }
 }
 
 fn main() -> Result<(), String> {
@@ -368,7 +394,7 @@ fn main() -> Result<(), String> {
         container.foreach(|g| { 
             draw_segment(&mut canvas, &g.way.segment) 
         });
-        text::write_multiline_text(&mut canvas, &ttf_context, "Example text\nLine 2", 0, 0, 16);
+        text::write_multiline_text(&mut canvas, &ttf_context, &container.debug_stats(), 0, 0, 16);
         match container.snap(fx, fy) {
             Some(snap) => { 
             draw_snap(&mut canvas, snap, container.snap_tolerance as i32);

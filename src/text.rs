@@ -33,10 +33,9 @@ pub fn write_text(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, tex
     return canvas.copy(&texture, None, Some(position));
 }
 
-pub fn write_multiline_text(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, text: &str, x: u32, y: u32, point_size: u16) -> Result<(), String> {
-    let splits = text.split("\n").collect::<Vec<&str>>();
-    for i in 0..splits.len() {
-        let line_result = write_text(canvas, ttf_context, &splits[i], 0, i as u32 * point_size as u32, point_size);
+pub fn write_multiline_text(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, text: &[String], x: u32, y: u32, point_size: u16) -> Result<(), String> {
+    for i in 0..text.len() {
+        let line_result = write_text(canvas, ttf_context, &text[i], 0, i as u32 * point_size as u32, point_size);
         if line_result.is_err() {
             return line_result;
         }
